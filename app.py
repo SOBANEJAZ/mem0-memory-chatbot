@@ -5,19 +5,10 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-client = os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 PERSONALITIES = {
-    "Andrew Huberman (default)": {
-        "author": "Dr. Andrew Huberman",
-        "system": "You are a famous podcaster, Andrew Huberman.",
-        "welcome": (
-            "Welcome! I'm Dr. Andrew Huberman, a Professor of Neurobiology at Stanford University "
-            "and host of the Huberman Lab podcast. I'm here to discuss neuroscience, health optimization, "
-            "and peak performance. What would you like to know?"
-        ),
-    },
     "Math Teacher": {
         "author": "Math Teacher",
         "system": (
@@ -30,7 +21,8 @@ PERSONALITIES = {
         "author": "Doctor",
         "system": (
             "You are a qualified medical doctor. Strictly answer only health and medical questions. "
-            "If the user's question is outside health/medicine, respond: 'I can only answer health and medical questions.'"
+            "Do not answer math questions — if the user's question is outside health/medicine (including math), "
+            "respond: 'I can only answer health and medical questions.'"
         ),
         "welcome": "Hello — I'm a doctor. Ask about health or medical topics (I only answer medical queries).",
     },
@@ -38,7 +30,8 @@ PERSONALITIES = {
         "author": "Travel Guide",
         "system": (
             "You are an expert travel guide. Strictly provide travel advice, tips, and recommendations. "
-            "If the user's question is outside travel, respond: 'I can only provide travel advice and tips.'"
+            "Do not answer math questions — if the user's question is outside travel (including math), "
+            "respond: 'I can only provide travel advice and tips.'"
         ),
         "welcome": "Hello — I'm a travel guide. Ask for travel tips, destinations, and itineraries (travel only).",
     },
@@ -46,7 +39,8 @@ PERSONALITIES = {
         "author": "Chef",
         "system": (
             "You are a professional chef. Strictly answer only cooking and recipe questions. "
-            "If the user's question is outside cooking, respond: 'I can only answer cooking and recipe questions.'"
+            "Do not answer math questions — if the user's question is outside cooking (including math), "
+            "respond: 'I can only answer cooking and recipe questions.'"
         ),
         "welcome": "Hello — I'm a chef. Ask about recipes, techniques, and cooking tips (cooking only).",
     },
@@ -54,7 +48,8 @@ PERSONALITIES = {
         "author": "Tech Support",
         "system": (
             "You are a knowledgeable technical support agent. Strictly answer only technical troubleshooting queries. "
-            "If the user's question is outside technical support, respond: 'I can only answer technical troubleshooting questions.'"
+            "Do not answer math questions — if the user's question is outside technical support (including math), "
+            "respond: 'I can only answer technical troubleshooting questions.'"
         ),
         "welcome": "Hello — I'm tech support. Ask about troubleshooting and technical issues (tech support only).",
     },
@@ -64,7 +59,7 @@ PERSONALITIES = {
 def init_state():
     if "conversation_history" not in st.session_state:
         # default personality system message
-        default_system = PERSONALITIES["Andrew Huberman (default)"]["system"]
+        default_system = PERSONALITIES["Math Teacher"]["system"]
         st.session_state.conversation_history = [
             {"role": "system", "content": default_system}
         ]
@@ -74,7 +69,7 @@ def init_state():
     if "welcome_shown" not in st.session_state:
         st.session_state.welcome_shown = False
     if "personality" not in st.session_state:
-        st.session_state.personality = "Andrew Huberman (default)"
+        st.session_state.personality = "Math Teacher"
 
 
 def set_personality(personality_key: str):
@@ -127,20 +122,12 @@ def stream_response():
                     print("STREAM CHUNK:", chunk)
                 except Exception:
                     pass
-
                 # Mirror the original chunk handling (try to read `content`)
                 content = None
                 try:
                     content = chunk.choices[0].delta.content
                 except Exception:
-                    # if the guard/monitoring model returns safety verdicts instead
-                    # of actual content, those fields may be present on the chunk.
-                    try:
-                        safety = getattr(chunk.choices[0].delta, "safety", None)
-                        if safety is not None:
-                            print("STREAM CHUNK - safety verdict:", safety)
-                    except Exception:
-                        pass
+                    pass
 
                 if content is not None:
                     full_response += content
@@ -150,14 +137,6 @@ def stream_response():
             {"role": "assistant", "content": full_response}
         )
         st.session_state.messages.append(("assistant", author, full_response))
-
-        # If the model only returned a safety label such as "safe", warn the user
-        if full_response.strip().lower() == "safe":
-            st.warning(
-                "The model returned a safety verdict ('safe') instead of a normal reply.\n"
-                "You're likely using a guard/moderation model (e.g. 'llama-guard-...').\n"
-                "Switch to a generative chat model to get normal assistant responses."
-            )
 
     except Exception as e:
         st.error(f"An error occurred: {e}")
