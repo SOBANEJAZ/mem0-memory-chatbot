@@ -1,11 +1,11 @@
 import streamlit as st
 from groq import Groq
 import os
-from dotenv import load_dotenv
 
-load_dotenv()
 
-client = os.environ.get("GROQ_API_KEY")
+api_key = os.environ["GROQ_API_KEY"]
+
+client = Groq(api_key=api_key)
 
 
 PERSONALITIES = {
