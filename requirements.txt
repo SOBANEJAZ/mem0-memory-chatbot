@@ -1,3 +1,4 @@
 python-dotenv
-groq
+google-genai
+mem0ai
 streamlit
