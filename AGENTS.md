@@ -4,7 +4,12 @@
 
 This is a Streamlit-based chatbot using Google's Gemini Flash 2.5 model and Mem0 for long-term memory. The bot remembers key facts about users across conversations.
 
-**Tech Stack**: Python, Streamlit, Google Gemini API, Mem0
+**Tech Stack**: Python, Streamlit, Google Gemini API, Mem0, Pydantic
+
+**Key Files**:
+- `app.py` - Main Streamlit application
+- `memory.py` - Simple rule-based memory classification
+- `agentic_memory.py` - AI-powered memory classification using Gemini
 
 ## Build & Run Commands
 
@@ -22,7 +27,7 @@ streamlit run app.py --server.runOnSave true
 ## Linting & Testing Commands
 
 ```bash
-# Install dev dependencies (recommended)
+# Install dev dependencies
 pip install pytest ruff black mypy
 
 # Run linter (ruff - preferred for speed)
@@ -51,16 +56,18 @@ ruff check . && black --check . && mypy . && pytest
 - Group imports: standard library → third-party → local
 - Sort alphabetically within groups
 - Use absolute imports for project files
-- Example from codebase:
+- Example:
 ```python
+import json
 import os
-import re
-from dotenv import load_dotenv
+from typing import Literal
+
 import streamlit as st
+from dotenv import load_dotenv
 from google import genai
 from google.genai import types
 from mem0 import MemoryClient
-from memory import retrieve_relevant_memory, store_user_fact
+from pydantic import BaseModel, ValidationError
 ```
 
 ### Formatting
@@ -72,16 +79,21 @@ from memory import retrieve_relevant_memory, store_user_fact
 
 ### Naming Conventions
 - **Functions/variables**: `snake_case` (e.g., `store_user_fact`, `user_input`)
-- **Constants**: `UPPER_CASE` (e.g., `IMPORTANT_TRIGGERS`)
-- **Classes**: `PascalCase` (when needed)
+- **Constants**: `UPPER_CASE` (e.g., `MEMORY_CLASSIFIER_SYSTEM_PROMPT`)
+- **Classes**: `PascalCase` (e.g., `MemoryDecision`)
 - **Modules**: `lowercase.py` (e.g., `memory.py`, `app.py`)
 
 ### Type Hints
-- Use type hints for function parameters and return values
+- Use type hints for all function parameters and return values
 - Use `Optional` for values that can be None
+- Use `Literal` for string enums
 - Example:
 ```python
-from typing import Optional, List
+from typing import Optional, Literal
+from pydantic import BaseModel
+
+class MemoryDecision(BaseModel):
+    save: Literal["yes", "no"]
 
 def retrieve_relevant_memory(user_text: str, user_id: str = "default_user") -> str:
     ...
@@ -89,19 +101,23 @@ def retrieve_relevant_memory(user_text: str, user_id: str = "default_user") -> s
 
 ### Error Handling
 - Use specific exception types, avoid bare `except:`
-- Log errors with context before re-raising if needed
-- Handle API failures gracefully with user-friendly messages
+- Use `st.warning()` for user-facing errors in Streamlit
+- Log errors with context before returning fallback values
+- Handle API failures gracefully
 - Example:
 ```python
 try:
-    response = chat.send_message(user_input)
+    response = client.models.generate_content(...)
+except (ValidationError, json.JSONDecodeError) as e:
+    st.warning(f"Memory classifier returned invalid JSON: {str(e)}")
+    return False
 except Exception as e:
-    st.error(f"Failed to get response: {str(e)}")
-    return None
+    st.warning(f"Memory classifier failed: {str(e)}")
+    return False
 ```
 
 ### Environment Variables
-- Always use `python-dotenv` to load `.env` file
+- Always use `python-dotenv` to load `.env` file at module level
 - Access via `os.getenv()` with defaults when appropriate
 - Never commit `.env` files (keep in `.gitignore`)
 - Example:
@@ -113,34 +129,29 @@ api_key = os.getenv("GEMINI_API_KEY")
 
 ### Streamlit Patterns
 - Use `st.session_state` for chat history persistence
-- Use `st.cache_resource` for expensive initializations (e.g., API clients)
+- Use `@st.cache_resource` for expensive initializations (API clients)
+- Use Pydantic models for structured JSON responses from LLMs
 - Structure UI with `st.chat_message()` and `st.write()`
 
+### Pydantic Models
+- Use Pydantic for validating LLM JSON responses
+- Define response schemas explicitly
+- Handle validation errors gracefully
+
 ### Testing Standards
-- Use pytest for all tests
-- Name test files: `test_<module>.py`
-- Name test functions: `test_<function_name>_<scenario>`
-- Use fixtures for shared setup
-- Mock external API calls (Gemini, Mem0)
-- Example:
-```python
-def test_is_fact_important_detects_name():
-    assert is_fact_important("My name is John") is True
-    assert is_fact_important("Hello") is False
-```
+- Use pytest; name files `test_<module>.py` and functions `test_<function_name>_<scenario>`
+- Use fixtures for shared setup; mock external API calls (Gemini, Mem0)
 
 ### Documentation
-- Add docstrings to all public functions
-- Use Google-style or NumPy-style docstrings
+- Add docstrings to all public functions using Google-style
 - Keep README.md updated with setup instructions
 
 ### Security
-- Never hardcode API keys
-- Use `.env` for all secrets
+- Never hardcode API keys; use `.env` for all secrets
 - Validate user input before processing
 - Sanitize outputs displayed in UI
+- Never store sensitive data (passwords, medical, financial)
 
 ### Dependencies
 - Pin versions in `requirements.txt` for reproducibility
-- Use `pip freeze > requirements.txt` to capture exact versions
 - Keep dependencies minimal
