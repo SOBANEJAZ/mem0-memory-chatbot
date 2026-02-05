@@ -35,7 +35,7 @@ The project relies on the following Python packages:
 ### Setup
 1. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   uv sync
    ```
 
 2. Copy `.env.example` to `.env` and add your API keys:
@@ -50,12 +50,12 @@ The project relies on the following Python packages:
 ### Running the Application
 Run the app with:
 ```bash
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 For development with auto-reload:
 ```bash
-streamlit run app.py --server.runOnSave true
+uv run streamlit run app.py --server.runOnSave true
 ```
 
 ## Development Conventions

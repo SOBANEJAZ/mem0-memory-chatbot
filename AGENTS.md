@@ -11,19 +11,19 @@ A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and
 ### Running the Application
 
 ```bash
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 ### Development with Auto-Reload
 
 ```bash
-streamlit run app.py --server.runOnSave true
+uv run streamlit run app.py --server.runOnSave true
 ```
 
 ### Dependency Installation
 
 ```bash
-pip install -r requirements.txt
+uv sync
 ```
 
 ### Environment Setup

@@ -29,7 +29,7 @@ A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and
 
 2. Install dependencies:
    ```bash
-   pip install -r requirements.txt
+   uv sync
    ```
 
 3. Copy `.env.example` to `.env` and add your API keys:
@@ -46,13 +46,13 @@ A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and
 Run the app:
 
 ```bash
-streamlit run app.py
+uv run streamlit run app.py
 ```
 
 For development with auto-reload:
 
 ```bash
-streamlit run app.py --server.runOnSave true
+uv run streamlit run app.py --server.runOnSave true
 ```
 
 
