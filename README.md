@@ -1,6 +1,8 @@
+
 # Memory Chatbot
 
 A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and Mem0 for long-term memory. The bot remembers key facts about the user across conversations using name-based user identification.
+![Mem0 Memory Chatbot](image.png)
 
 ## Features
 
