@@ -141,6 +141,14 @@ def get_memory_client() -> MemoryClient:
 - Set appropriate `temperature` and `max_tokens` for deterministic outputs
 - Use JSON response format for classifier tasks
 
+### User Identification
+
+- The application implements name-based user identification
+- Users are prompted to enter their name before starting a conversation
+- The entered name is used as the user ID for memory storage and retrieval
+- This allows users to access their memories across different sessions and devices
+- User ID is stored in `st.session_state.user_id` after initial entry
+
 ### File Organization
 
 - `app.py`: Main Streamlit application entry point

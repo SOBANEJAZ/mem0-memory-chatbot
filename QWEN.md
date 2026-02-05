@@ -70,10 +70,11 @@ The bot uses one of two approaches to decide what to remember:
 The main app (`app.py`) currently uses the AI-powered approach for better accuracy.
 
 ### How It Works
-1. **User Input**: The user sends a message through the Streamlit chat interface
-2. **Memory Retrieval**: Relevant past memories are retrieved from Mem0 based on the current message
-3. **Contextual Response**: The MoonshotAI Kimi-K2-Instruct model generates a response using the retrieved memories as context
-4. **Memory Storage**: After responding, the message is analyzed to determine if it contains a fact worth storing for future conversations
+1. **User Identification**: The user enters their name to establish a unique identity for memory storage
+2. **User Input**: The user sends a message through the Streamlit chat interface
+3. **Memory Retrieval**: Relevant past memories are retrieved from Mem0 based on the current message and user ID
+4. **Contextual Response**: The MoonshotAI Kimi-K2-Instruct model generates a response using the retrieved memories as context
+5. **Memory Storage**: After responding, the message is analyzed to determine if it contains a fact worth storing for future conversations
 
 ### Memory Decision Logic
 The AI-powered memory classifier follows these rules:

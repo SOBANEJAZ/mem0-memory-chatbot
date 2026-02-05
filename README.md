@@ -1,10 +1,12 @@
 # Memory Chatbot
 
-A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and Mem0 for long-term memory. The bot remembers key facts about the user across conversations.
+A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and Mem0 for long-term memory. The bot remembers key facts about the user across conversations using name-based user identification.
 
 ## Features
 
-- **Long-term Memory**: Remembers user details like name, preferences, work, and personal facts across sessions using Mem0.
+- **Personalized Memory**: Remembers user details like name, preferences, work, and personal facts across sessions using Mem0.
+- **Name-Based User Identification**: Each user enters their name to access their personalized memory space.
+- **Cross-Session Persistence**: Memories persist across different sessions, devices, and browsers using the user's name as identifier.
 - **AI-Powered Memory Classification**: Uses Groq's MoonshotAI Kimi-K2-Instruct to intelligently decide which user messages contain save-worthy facts (in `agentic_memory.py`).
 - **Rule-Based Memory Fallback**: Simple keyword-based memory classification as an alternative (in `memory.py`).
 - **MoonshotAI Kimi-K2-Instruct**: Powered by Groq's fast and efficient model for responses.
@@ -56,10 +58,11 @@ streamlit run app.py --server.runOnSave true
 
 ## How It Works
 
-1. **User Input**: The user sends a message through the Streamlit chat interface.
-2. **Memory Retrieval**: Relevant past memories are retrieved from Mem0 based on the current message.
-3. **Contextual Response**: The MoonshotAI Kimi-K2-Instruct model generates a response using the retrieved memories as context.
-4. **Memory Storage**: After responding, the message is analyzed to determine if it contains a fact worth storing for future conversations.
+1. **User Identification**: The user enters their name to establish a unique identity for memory storage.
+2. **User Input**: The user sends a message through the Streamlit chat interface.
+3. **Memory Retrieval**: Relevant past memories are retrieved from Mem0 based on the current message and user ID.
+4. **Contextual Response**: The MoonshotAI Kimi-K2-Instruct model generates a response using the retrieved memories as context.
+5. **Memory Storage**: After responding, the message is analyzed to determine if it contains a fact worth storing for future conversations.
 
 ## Memory Classification
 

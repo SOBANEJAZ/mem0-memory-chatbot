@@ -10,6 +10,16 @@ def start_chat_app():
     """Initialize and run the memory-enabled chatbot interface."""
     st.title("Memory Chatbot")
 
+    # Ask for user name if not already set
+    if "user_id" not in st.session_state:
+        st.write("Welcome! Please enter your name to access your memories:")
+        user_name = st.text_input("Your name:", key="user_name_input")
+        
+        if user_name:
+            st.session_state.user_id = user_name.strip()
+            st.rerun()
+        return  # Stop here until user enters name
+    
     if "messages" not in st.session_state:
         st.session_state.messages = []
 
@@ -24,7 +34,7 @@ def start_chat_app():
             {"role": "user", "content": user_input}
         )
 
-        known_facts = retrieve_relevant_memory(user_input)
+        known_facts = retrieve_relevant_memory(user_input, st.session_state.user_id)
 
         # System prompt with user memory context
         system_prompt = f"""
@@ -60,11 +70,11 @@ Instructions:
             {"role": "assistant", "content": reply}
         )
 
-        store_user_fact(user_input)
+        store_user_fact(user_input, st.session_state.user_id)
 
         with st.chat_message("user"):
             st.write(user_input)
-        with st.chat_message("assistant"):
+        with st.chat_message("Sam Altman"):
             st.write(reply)
 
 if __name__ == "__main__":
