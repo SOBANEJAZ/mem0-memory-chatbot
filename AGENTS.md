@@ -1,96 +1,81 @@
-# Agent Instructions
+# AGENTS.md - Guidelines for Agentic Coding
+
+This document provides guidelines for AI agents working on this codebase.
 
 ## Project Overview
 
-This is a Streamlit-based chatbot using Google's Gemini Flash 2.5 model and Mem0 for long-term memory. The bot remembers key facts about users across conversations.
+A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and Mem0 for long-term memory management. The bot remembers user facts across conversations and provides contextual responses.
 
-**Tech Stack**: Python, Streamlit, Google Gemini API, Mem0, Pydantic
+## Build & Development Commands
 
-**Key Files**:
-- `app.py` - Main Streamlit application
-- `memory.py` - Simple rule-based memory classification
-- `agentic_memory.py` - AI-powered memory classification using Gemini
-
-## Build & Run Commands
+### Running the Application
 
 ```bash
-# Install dependencies
-pip install -r requirements.txt
-
-# Run the application
 streamlit run app.py
+```
 
-# Run with auto-reload (for development)
+### Development with Auto-Reload
+
+```bash
 streamlit run app.py --server.runOnSave true
 ```
 
-## Linting & Testing Commands
+### Dependency Installation
 
 ```bash
-# Install dev dependencies
-pip install pytest ruff black mypy
-
-# Run linter (ruff - preferred for speed)
-ruff check .
-ruff check . --fix  # Auto-fix issues
-
-# Run formatter
-black .
-
-# Run type checker
-mypy .
-
-# Run tests
-pytest
-pytest -v              # Verbose output
-pytest tests/test_memory.py  # Single test file
-pytest -k test_name    # Run specific test by name
-
-# Run all quality checks
-ruff check . && black --check . && mypy . && pytest
+pip install -r requirements.txt
 ```
+
+### Environment Setup
+
+Copy the example environment file and populate with your API keys:
+
+```bash
+cp .env.example .env
+```
+
+Required environment variables:
+- `GROQ_API_KEY`: Groq Cloud API key
+- `MEM0_API_KEY`: Mem0 platform API key
 
 ## Code Style Guidelines
 
+### General Principles
+
+- Write clean, self-documenting code
+- Keep functions small and focused on a single responsibility
+- Use descriptive variable and function names
+- Prefer explicit over implicit
+
+### Python Conventions
+
+- Follow PEP 8 style guidelines
+- Use type hints for function parameters and return values (see `agentic_memory.py:56` for example)
+- Write docstrings for all public functions and classes
+- Maximum line length: 100 characters
+
 ### Imports
-- Group imports: standard library → third-party → local
-- Sort alphabetically within groups
-- Use absolute imports for project files
-- Example:
+
+Standard library imports first, then third-party, then local:
+
 ```python
-import json
 import os
+import json
 from typing import Literal
 
 import streamlit as st
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from groq import Groq
 from mem0 import MemoryClient
 from pydantic import BaseModel, ValidationError
 ```
 
-### Formatting
-- **Indentation**: 4 spaces (standard Python)
-- **Line length**: 88 characters (Black default)
-- **Quotes**: Use double quotes for strings
-- **Blank lines**: 2 lines between top-level functions/classes, 1 line between methods
-- **Trailing whitespace**: Remove it
-
-### Naming Conventions
-- **Functions/variables**: `snake_case` (e.g., `store_user_fact`, `user_input`)
-- **Constants**: `UPPER_CASE` (e.g., `MEMORY_CLASSIFIER_SYSTEM_PROMPT`)
-- **Classes**: `PascalCase` (e.g., `MemoryDecision`)
-- **Modules**: `lowercase.py` (e.g., `memory.py`, `app.py`)
-
 ### Type Hints
-- Use type hints for all function parameters and return values
-- Use `Optional` for values that can be None
-- Use `Literal` for string enums
-- Example:
+
+Use type hints consistently throughout the codebase:
+
 ```python
-from typing import Optional, Literal
-from pydantic import BaseModel
+from typing import Literal
 
 class MemoryDecision(BaseModel):
     save: Literal["yes", "no"]
@@ -99,15 +84,25 @@ def retrieve_relevant_memory(user_text: str, user_id: str = "default_user") -> s
     ...
 ```
 
+### Naming Conventions
+
+- **Functions**: snake_case (`retrieve_relevant_memory`, `store_user_fact`)
+- **Classes**: PascalCase (`MemoryDecision`)
+- **Constants**: UPPER_SNAKE_CASE (`MEMORY_CLASSIFIER_SYSTEM_PROMPT`)
+- **Variables**: snake_case (`user_input`, `chat_history`)
+- **Type aliases**: PascalCase
+
 ### Error Handling
-- Use specific exception types, avoid bare `except:`
-- Use `st.warning()` for user-facing errors in Streamlit
-- Log errors with context before returning fallback values
-- Handle API failures gracefully
-- Example:
+
+- Use try/except blocks for API calls and external service integrations
+- Provide informative error messages without exposing sensitive information
+- Use Pydantic for input validation (see `agentic_memory.py:14-16`)
+- Return `False` or empty values on failure rather than raising exceptions for expected error cases
+
 ```python
 try:
-    response = client.models.generate_content(...)
+    decision = _parse_memory_decision(response.choices[0].message.content or "")
+    return decision.save == "yes"
 except (ValidationError, json.JSONDecodeError) as e:
     st.warning(f"Memory classifier returned invalid JSON: {str(e)}")
     return False
@@ -116,42 +111,39 @@ except Exception as e:
     return False
 ```
 
-### Environment Variables
-- Always use `python-dotenv` to load `.env` file at module level
-- Access via `os.getenv()` with defaults when appropriate
-- Never commit `.env` files (keep in `.gitignore`)
-- Example:
+### Docstrings
+
+Write docstrings for all functions using Google-style format:
+
 ```python
-from dotenv import load_dotenv
-load_dotenv()
-api_key = os.getenv("GEMINI_API_KEY")
+def retrieve_relevant_memory(user_text: str, user_id: str = "default_user") -> str:
+    """Retrieve relevant memory for a user given the current message."""
+    ...
 ```
 
 ### Streamlit Patterns
+
+- Use `@st.cache_resource` for expensive initialization (clients, connections)
+- Access secrets via `os.getenv()` after `load_dotenv()`
 - Use `st.session_state` for chat history persistence
-- Use `@st.cache_resource` for expensive initializations (API clients)
-- Use Pydantic models for structured JSON responses from LLMs
-- Structure UI with `st.chat_message()` and `st.write()`
 
-### Pydantic Models
-- Use Pydantic for validating LLM JSON responses
-- Define response schemas explicitly
-- Handle validation errors gracefully
+```python
+@st.cache_resource
+def get_memory_client() -> MemoryClient:
+    """Initialize and cache the Mem0 client."""
+    return MemoryClient(api_key=os.getenv("MEM0_API_KEY"))
+```
 
-### Testing Standards
-- Use pytest; name files `test_<module>.py` and functions `test_<function_name>_<scenario>`
-- Use fixtures for shared setup; mock external API calls (Gemini, Mem0)
+### API Integration Guidelines
 
-### Documentation
-- Add docstrings to all public functions using Google-style
-- Keep README.md updated with setup instructions
+- Groq API: Use `client.chat.completions.create()` with model `"moonshotai/kimi-k2-instruct"`
+- Mem0 API: Use version `"v2"` for all operations
+- Set appropriate `temperature` and `max_tokens` for deterministic outputs
+- Use JSON response format for classifier tasks
 
-### Security
-- Never hardcode API keys; use `.env` for all secrets
-- Validate user input before processing
-- Sanitize outputs displayed in UI
-- Never store sensitive data (passwords, medical, financial)
+### File Organization
 
-### Dependencies
-- Pin versions in `requirements.txt` for reproducibility
-- Keep dependencies minimal
+- `app.py`: Main Streamlit application entry point
+- `agentic_memory.py`: AI-powered memory classification (preferred)
+- `memory.py`: Legacy rule-based classification (fallback)
+- Keep related functionality in the same module
