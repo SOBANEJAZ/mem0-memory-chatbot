@@ -4,8 +4,7 @@ from typing import Literal
 
 import streamlit as st
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from groq import Groq
 from mem0 import MemoryClient
 from pydantic import BaseModel, ValidationError
 
@@ -17,22 +16,21 @@ class MemoryDecision(BaseModel):
 
 
 MEMORY_CLASSIFIER_SYSTEM_PROMPT = """
-You are a classifier for long-term memory in a chatbot.
+You classify user messages for long-term memory storage.
 
-Decide whether the user's message contains a stable, user-specific fact that
-will be useful in future conversations. Save-worthy facts include:
-- Identity or background (name, job, location, education)
-- Long-term preferences (likes, dislikes, favorites)
+Save stable, user-specific facts that will be useful in future conversations:
+- Identity details (name, job, location, education)
+- Preferences (likes, dislikes, favorites)
 - Long-term projects or goals
 - Personal traits or recurring constraints
 
-Do NOT save if the message is:
-- A question or request
-- A transient status update or one-off plan
-- Generic conversation with no user-specific facts
+Do not save:
+- Questions or requests
+- Temporary updates or one-off plans
+- Generic conversation without user-specific facts
 - Sensitive data (passwords, secrets, medical, financial, legal)
 
-Output JSON only, exactly in one of these forms:
+Output JSON in one of these forms:
 {"save": "yes"}
 {"save": "no"}
 """.strip()
@@ -40,41 +38,43 @@ Output JSON only, exactly in one of these forms:
 
 @st.cache_resource
 def get_memory_client() -> MemoryClient:
-    """Create and cache the Mem0 client."""
+    """Initialize and cache the Mem0 client."""
     return MemoryClient(api_key=os.getenv("MEM0_API_KEY"))
 
 
 @st.cache_resource
-def get_gemini_client() -> genai.Client:
-    """Create and cache the Gemini client."""
-    return genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
+def get_groq_client() -> Groq:
+    """Initialize and cache the Groq client."""
+    return Groq(api_key=os.getenv("GROQ_API_KEY"))
 
 
 def _parse_memory_decision(raw_text: str) -> MemoryDecision:
-    """Parse the model output into a validated MemoryDecision."""
+    """Validate and parse the model output into a MemoryDecision."""
     return MemoryDecision.model_validate_json(raw_text)
 
 
 def is_fact_important(user_text: str) -> bool:
-    """Return True if the user's message should be stored as long-term memory."""
-    client = get_gemini_client()
+    """Check if the user's message contains important facts for long-term memory."""
+    client = get_groq_client()
     try:
-        response = client.models.generate_content(
-            model="gemma-3-27b",
-            contents=user_text,
-            config=types.GenerateContentConfig(
-                system_instruction=MEMORY_CLASSIFIER_SYSTEM_PROMPT,
-                response_mime_type="application/json",
-                response_schema=MemoryDecision,
-                temperature=0,
-                max_output_tokens=20,
-            ),
+        response = client.chat.completions.create(
+            model="moonshotai/kimi-k2-instruct",
+            messages=[
+                {
+                    "role": "system",
+                    "content": MEMORY_CLASSIFIER_SYSTEM_PROMPT
+                },
+                {
+                    "role": "user",
+                    "content": user_text
+                }
+            ],
+            response_format={"type": "json_object"},
+            temperature=0,
+            max_tokens=20,
         )
 
-        if getattr(response, "parsed", None) is not None:
-            decision = response.parsed
-        else:
-            decision = _parse_memory_decision(response.text or "")
+        decision = _parse_memory_decision(response.choices[0].message.content or "")
 
         return decision.save == "yes"
     except (ValidationError, json.JSONDecodeError) as e:
@@ -86,7 +86,7 @@ def is_fact_important(user_text: str) -> bool:
 
 
 def store_user_fact(user_text: str, user_id: str = "default_user") -> None:
-    """Store a user fact in Mem0 if the classifier deems it important."""
+    """Store a user fact in Mem0 if the classifier determines it's important."""
     if not user_text:
         return
 

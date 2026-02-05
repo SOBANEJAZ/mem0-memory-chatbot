@@ -14,6 +14,11 @@ def get_memory_client():
 
 
 def is_fact_important(user_text):
+    """
+    Check if user text contains important facts using keyword triggers.
+    
+    Identifies facts about identity, preferences, work, and personal details.
+    """
     IMPORTANT_TRIGGERS = [
         "my name is", "i am", "i'm",
         "i like", "i love", "i hate", "i prefer",
@@ -32,6 +37,7 @@ def is_fact_important(user_text):
 
 
 def store_user_fact(user_text, user_id="default_user"):
+    """Store user fact in memory if it meets importance criteria."""
     if is_fact_important(user_text):
         client = get_memory_client()
         client.add(
@@ -45,6 +51,7 @@ def store_user_fact(user_text, user_id="default_user"):
         )
 
 def retrieve_relevant_memory(user_text, user_id="default_user"):
+    """Find and return relevant memories for the given user and text."""
     client = get_memory_client()
     search_results = client.search(
         query=user_text,
@@ -56,10 +63,10 @@ def retrieve_relevant_memory(user_text, user_id="default_user"):
         version="v2",
         limit=5
     )
-    
+
     results = search_results.get("results") if search_results else []
-    
+
     if not results:
         return "None."
-        
+
     return "\n".join(f"- {r['memory']}" for r in results)

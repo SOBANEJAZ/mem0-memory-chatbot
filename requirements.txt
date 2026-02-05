@@ -1,5 +1,5 @@
 python-dotenv
-google-genai
+groq
 mem0ai
 streamlit
 pydantic

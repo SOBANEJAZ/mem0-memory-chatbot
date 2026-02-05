@@ -1,13 +1,13 @@
 # Memory Chatbot
 
-A Streamlit-based chatbot that uses Google's Gemini Flash 2.5 model and Mem0 for long-term memory. The bot remembers key facts about the user across conversations.
+A Streamlit-based chatbot that uses Groq's MoonshotAI Kimi-K2-Instruct model and Mem0 for long-term memory. The bot remembers key facts about the user across conversations.
 
 ## Features
 
 - **Long-term Memory**: Remembers user details like name, preferences, work, and personal facts across sessions using Mem0.
-- **AI-Powered Memory Classification**: Uses Gemini to intelligently decide which user messages contain save-worthy facts (in `agentic_memory.py`).
+- **AI-Powered Memory Classification**: Uses Groq's MoonshotAI Kimi-K2-Instruct to intelligently decide which user messages contain save-worthy facts (in `agentic_memory.py`).
 - **Rule-Based Memory Fallback**: Simple keyword-based memory classification as an alternative (in `memory.py`).
-- **Gemini 2.5 Flash**: Powered by Google's fast and efficient model for responses.
+- **MoonshotAI Kimi-K2-Instruct**: Powered by Groq's fast and efficient model for responses.
 - **Contextual Conversations**: Retrieves relevant past memories to personalize responses.
 
 ## Project Structure
@@ -15,7 +15,7 @@ A Streamlit-based chatbot that uses Google's Gemini Flash 2.5 model and Mem0 for
 ```
 .
 ├── app.py              # Main Streamlit application
-├── agentic_memory.py   # AI-powered memory classification using Gemini
+├── agentic_memory.py   # AI-powered memory classification using Groq
 ├── memory.py           # Rule-based memory classification (legacy)
 ├── requirements.txt    # Python dependencies
 └── .env.example        # Environment variables template
@@ -34,9 +34,9 @@ A Streamlit-based chatbot that uses Google's Gemini Flash 2.5 model and Mem0 for
    ```bash
    cp .env.example .env
    ```
-   
+
    Required environment variables:
-   - `GEMINI_API_KEY`: Get from [Google AI Studio](https://aistudio.google.com/)
+   - `GROQ_API_KEY`: Get from [Groq Cloud](https://console.groq.com/)
    - `MEM0_API_KEY`: Get from [Mem0](https://app.mem0.ai/)
 
 ## Usage
@@ -93,14 +93,14 @@ ruff check . && black --check . && mypy . && pytest
 
 1. **User Input**: The user sends a message through the Streamlit chat interface.
 2. **Memory Retrieval**: Relevant past memories are retrieved from Mem0 based on the current message.
-3. **Contextual Response**: The Gemini model generates a response using the retrieved memories as context.
+3. **Contextual Response**: The MoonshotAI Kimi-K2-Instruct model generates a response using the retrieved memories as context.
 4. **Memory Storage**: After responding, the message is analyzed to determine if it contains a fact worth storing for future conversations.
 
 ## Memory Classification
 
 The bot uses one of two approaches to decide what to remember:
 
-- **AI-Powered** (`agentic_memory.py`): Uses Gemini (gemma-3-27b) to classify whether a message contains a stable, user-specific fact worth remembering. This handles complex cases and avoids storing sensitive information.
+- **AI-Powered** (`agentic_memory.py`): Uses Groq's MoonshotAI Kimi-K2-Instruct model to classify whether a message contains a stable, user-specific fact worth remembering. This handles complex cases and avoids storing sensitive information.
 
 - **Rule-Based** (`memory.py`): Uses keyword matching to identify important facts. Simpler and faster but less nuanced.
 

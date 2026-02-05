@@ -1,13 +1,13 @@
 import os
 import streamlit as st
 from dotenv import load_dotenv
-from google import genai
-from google.genai import types
+from groq import Groq
 from agentic_memory import retrieve_relevant_memory, store_user_fact
 
 load_dotenv()
 
 def start_chat_app():
+    """Initialize and run the memory-enabled chatbot interface."""
     st.title("Memory Chatbot")
 
     if "messages" not in st.session_state:
@@ -26,7 +26,7 @@ def start_chat_app():
 
         known_facts = retrieve_relevant_memory(user_input)
 
-        # Simplified System Prompt
+        # System prompt with user memory context
         system_prompt = f"""
 You are a helpful assistant with access to user memory.
 
@@ -39,32 +39,29 @@ Instructions:
 3. Do not ask for known info.
 """
 
-        # Gemini Call
-        client = genai.Client(api_key=os.getenv("GEMINI_API_KEY"))
-        
-        chat_history = []
-        for msg in st.session_state.messages[:-1]: 
-             chat_history.append({"role": "user" if msg["role"] == "user" else "model", "parts": [{"text": msg["content"]}]})
+        # Call Groq API for response
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 
-        chat = client.chats.create(
-            model="gemini-2.5-flash", 
-            config=types.GenerateContentConfig(
-                system_instruction=system_prompt,
-                temperature=0.3
-            ),
-            history=chat_history
+        chat_history = []
+        for msg in st.session_state.messages[:-1]:
+             chat_history.append({"role": msg["role"], "content": msg["content"]})
+
+        chat_history.append({"role": "system", "content": system_prompt})
+
+        response = client.chat.completions.create(
+            model="moonshotai/kimi-k2-instruct",
+            messages=chat_history,
+            temperature=0.3
         )
-        
-        response = chat.send_message(user_input)
-        
-        reply = response.text
+
+        reply = response.choices[0].message.content
 
         st.session_state.messages.append(
             {"role": "assistant", "content": reply}
         )
 
         store_user_fact(user_input)
-        
+
         with st.chat_message("user"):
             st.write(user_input)
         with st.chat_message("assistant"):
