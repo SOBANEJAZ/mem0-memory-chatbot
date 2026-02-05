@@ -53,41 +53,6 @@ For development with auto-reload:
 streamlit run app.py --server.runOnSave true
 ```
 
-## Development
-
-Install development dependencies:
-
-```bash
-pip install pytest ruff black mypy
-```
-
-Run linting and formatting:
-
-```bash
-# Lint with ruff
-ruff check .
-ruff check . --fix  # Auto-fix issues
-
-# Format with black
-black .
-
-# Type checking
-mypy .
-```
-
-Run tests:
-
-```bash
-pytest
-pytest -v              # Verbose output
-pytest -k test_name    # Run specific test
-```
-
-Run all quality checks:
-
-```bash
-ruff check . && black --check . && mypy . && pytest
-```
 
 ## How It Works
 
